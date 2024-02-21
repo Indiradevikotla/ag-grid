@@ -1,5 +1,38 @@
-<ag-grid-angular style="width: 100%;" class="ag-theme-alpine" [rowData]="rowData" [columnDefs]="colDefs"
-    [pagination]="true" [defaultColDef]="defaultColDef" [rowSelection]="'multiple'"
-    [paginationPageSizeSelector]="paginationPageSizeSelector"
-    [paginationPageSize]="paginationPageSize" [groupDisplayType]="'custom'">
-</ag-grid-angular>
+<div style="margin: 15px !important;">
+    <div class="row" style="display: flex; justify-content: flex-start; margin: 15px !important">
+        <button class="btn btn-primary" type="button" (click)="addUser()">Add New User</button>
+        <button style="margin-left: 10px; margin-right: 10px;" class="btn btn-primary" type="button"
+            (click)="editUser()">Edit User</button>
+        <button style="margin-right: 10px;" class="btn btn-danger" type="button" (click)="deleteUser()">Delete
+            User</button>
+        <button class="btn btn-primary" type="button" (click)="dynamicUser()">Add Dynamic User</button>
+    </div>
+    <div>
+        <ag-grid-angular style="width: 100%; height:80%;" class="ag-theme-alpine" [rowData]="rowData" [columnDefs]="colDefs"
+            [pagination]="true" [defaultColDef]="defaultColDef" [rowSelection]="'multiple'" [editType]="'fullRow'"
+            [animateRows]="true" [paginationPageSize]="paginationPageSize" [groupDisplayType]="'custom'"
+            (rowClicked)="onRowClick($event)" #agGrid (gridReady)="onGridReady($event)"
+            [suppressRowTransform]="true"
+            >
+            <!-- [suppressClickEdit]="true" [suppressRowDeselection]="true" -->
+        </ag-grid-angular>
+    </div>
+</div>
+
+<div class="modal fade" id="exampleModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel"
+    aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header" style="font-size: 20px !important;">
+                <h5 class="modal-title" id="exampleModalLabel">User Details</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <app-ag-registration [rowValue]="selectedRow" [actionSelected]="actionSelected"
+                    (regFormValue)=registredFormData($event)></app-ag-registration>
+            </div>
+        </div>
+    </div>
+</div>

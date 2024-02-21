@@ -1,0 +1,39 @@
+<div class="dropdown">
+    <button class="btn btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" (click)="buttonClicked()">
+        Actions
+    </button>
+    <ul class="dropdown-menu" id="dropdown">
+        <li>
+            <div class="btn" type="button" (click)="openAddModal()">Add</div>
+        </li>
+        <li>
+            <div class="btn" type="button" (click)="openEditModal()">Edit</div>
+        </li>
+        <li>
+            <div class="btn" type="button" (click)="openDeleteModal()">Delete</div>
+        </li>
+        <li>
+          <div class="btn" type="button" (click)="AddDynamicUser()">DynamicUser</div>
+        </li>
+    </ul>
+</div>
+
+
+<div  class="modal fade" id="exampleModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+      <div class="modal-content">
+        <div class="modal-header" style="font-size: 20px !important;">
+          <h5 class="modal-title" id="exampleModalLabel">User Details</h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="modal-body" *ngIf="isEdit">
+          <app-ag-registration [actionSelected]="actionSelected" [rowValue]="selectedRow" (regFormValue)=reciveRegValues($event)></app-ag-registration>
+        </div>
+        <div class="modal-body" *ngIf="!isEdit">
+          <app-ag-registration [actionSelected]="actionSelected" (regFormValue)=reciveRegValues($event)></app-ag-registration>
+        </div>
+      </div>
+    </div>
+  </div>

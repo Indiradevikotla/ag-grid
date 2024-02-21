@@ -1,0 +1,61 @@
+<form [formGroup]="registerForm" (ngSubmit)="onSubmit()">
+    <div class="form-group">
+        <label for="firstName">First Name</label>
+        <input type="text" class="form-control" formControlName="firstName" aria-describedby="firstName"
+            placeholder="Enter frist name" [ngClass]="{ 'is-invalid': submitted && f.firstName.errors }">
+        <div *ngIf="submitted && f.firstName.errors" class="invalid-feedback">
+            <div *ngIf="f.firstName.errors.required">First Name is required </div>
+        </div>
+    </div>
+    <div class="form-group">
+        <label for="lastName">Last Name</label>
+        <input type="text" class="form-control" formControlName="lastName" aria-describedby="lastName"
+            placeholder="Enter last name" [ngClass]="{ 'is-invalid': submitted && f.lastName.errors }">
+        <div *ngIf="submitted && f.lastName.errors" class="invalid-feedback">
+            <div *ngIf="f.lastName.errors.required">last Name is required</div>
+        </div>
+    </div>
+    <div class="form-group">
+        <label for="userEmail">Email address</label>
+        <input type="email" class="form-control" formControlName="userEmail" aria-describedby="userEmail"
+            placeholder="Enter email" [ngClass]="{ 'is-invalid': submitted && f.userEmail.errors }">
+        <div *ngIf="submitted && f.userEmail.errors" class="invalid-feedback">
+            <div *ngIf="f.userEmail.errors.required">Email is required</div>
+            <div *ngIf="f.userEmail.errors.email">Email must be a valid email address</div>
+        </div>
+    </div>
+    <div class="form-group">
+        <label for="userEmail">Password</label>
+        <input type="password" class="form-control" formControlName="userPassword" aria-describedby="userPassword"
+            placeholder="Enter Password" [ngClass]="{ 'is-invalid': submitted && f.userPassword.errors }">
+        <div *ngIf="submitted && f.userPassword.errors" class="invalid-feedback">
+            <div *ngIf="f.userPassword.errors.required">Password is required</div>
+            <div *ngIf="f.userPassword.errors.minlength">Password must be at least 6</div>
+        </div>
+    </div>
+    <div class="form-group">
+        <label for="age">Age</label>
+        <input type="text" class="form-control" formControlName="age" aria-describedby="age"
+            placeholder="Enter Age" [ngClass]="{ 'is-invalid': submitted && f.age.errors }">
+        <div *ngIf="submitted && f.age.errors" class="invalid-feedback">
+            <div *ngIf="f.age.errors.required">Age is required</div>
+            <div *ngIf="f.age.errors.maxlength">Age must be at maximum 2 digits</div>
+        </div>
+    </div>
+    <div class="form-group">
+        <label for="skillsNeeded">Skills needed</label>
+        <select class="form-control" formControlName="skillsNeeded"
+            [ngClass]="{ 'is-invalid': submitted && f.skillsNeeded.errors }">
+            <option>Please select</option>
+            <option *ngFor="let skill of userSkills">{{skill}}</option>
+        </select>
+        <div *ngIf="submitted && f.skillsNeeded.errors" class="invalid-feedback"
+            [ngClass]="{ 'is-invalid': submitted && f.skillsNeeded.errors }">
+            <div *ngIf="f.skillsNeeded.errors.required">One Skill is required</div>
+        </div>
+    </div>
+    <div style="float: right; padding-bottom: 15px!important;">
+        <button type="submit" class="btn btn-primary" style="margin-right: 15px;">Submit</button>
+        <button type="submit" class="btn btn-secondary" (click)="reset()">Reset</button>
+    </div>
+</form>

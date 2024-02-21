@@ -11,7 +11,7 @@
     "e2e": "ng e2e"
   },
   "dependencies": {
-    "@angular/animations": "^14.0.0",
+    "@angular/animations": "^14.3.0",
     "@angular/common": "^14.0.0",
     "@angular/compiler": "^14.0.0",
     "@angular/core": "^14.0.0",
@@ -22,7 +22,11 @@
     "ag-grid-angular": "^29.0.0",
     "ag-grid-angular-legacy": "^28.0.0",
     "ag-grid-community": "^29.0.0",
+    "ag-grid-enterprise": "~29.0.0",
+    "bootstrap": "^3.3.7",
     "core-js": "^2.0.0",
+    "jquery": "^3.7.1",
+    "ngx-toastr": "^18.0.0",
     "rxjs": "~7.5.0",
     "tslib": "^2.3.0",
     "zone.js": "~0.11.4"

@@ -1,504 +1,762 @@
-import { Component } from "@angular/core";
-import { ColDef } from "ag-grid-community";
+import { Component, ElementRef, ViewChild, AfterViewInit, OnInit } from '@angular/core';
+import * as bootstrap from 'bootstrap';
+import { ColDef, GridApi, GridOptions } from "ag-grid-community";
+import { ActionButtonsComponent } from './action-buttons/action-buttons.component';
+import { SharedService } from './shared.service';
+// import { ToastrService } from 'ngx-toastr';
+declare var $: any;
 
 @Component({
     selector: "my-app",
     templateUrl: "./app.component.html",
     styleUrls: ["./app.component.scss"]
 })
-export class AppComponent {
+export class AppComponent implements OnInit {
+    public gridOptions: GridOptions;
+    ColumnDefs: any;
+    AgLoad: boolean;
+    gridApi: GridApi;
+    public gridColumnApi: any
+    public getRowNodeId: any;
+    selectedRow: any;
+    actionSelected: any;
+    colDefs
+    formData: any[];
+    rowIndex;
+    rowData: any[] = [
+        {
+            "firstName": "indira",
+            "lastName": "devi",
+            "userEmail": "indiradevikotla@gmail.com",
+            "userPassword": "XXXXXXXXX",
+            "age": 20,
+            "skillsNeeded": "Angular"
+        },
+        {
+            "firstName": "indira",
+            "lastName": "devi1",
+            "userEmail": "indiradevikotla@gmail.com",
+            "userPassword": "XXXXXXXXX",
+            "age": 45,
+            "skillsNeeded": "Angular"
+        },
+        {
+            "firstName": "indira",
+            "lastName": "devi2",
+            "userEmail": "indiradevikotla@gmail.com",
+            "userPassword": "XXXXXXXXX",
+            "age": 35,
+            "skillsNeeded": "Angular"
+        },
+        {
+            "firstName": "indira",
+            "lastName": "devi3",
+            "userEmail": "indiradevikotla@gmail.com",
+            "userPassword": "XXXXXXXXX",
+            "age": 15,
+            "skillsNeeded": "Angular"
+        }
+    ];
+    defaultColDef: ColDef = {
+        filter: true, // Enable filtering on all columns
+        editable: true, // Enable editing on all columns
+        sortable: true,
+        // singleClickEdit: true
+    };
+
 
     paginationPageSize = 20;
     paginationPageSizeSelector: number[] | boolean = [20, 50];
 
-    // Column Definitions: Defines & controls grid columns.
-    colDefs: ColDef[] = [
-        {
-            field: "mission",
-            width: 150,
-            checkboxSelection: true,
-        },
-        {
-            field: "company",
-            width: 130,
-        },
-        {
-            field: "location",
-            width: 225,
-        },
-        {
-            field: "date",
-        },
-        {
-            field: "price",
-            width: 130,
-            cellStyle: params => {
-                if (params.value > 3630000) {
+    constructor(private d: SharedService) {
+        this.colDefs = [
+            { headerName: 'First Name', field: 'firstName' },
+            { headerName: 'Last Name', field: 'lastName' },
+            { headerName: 'Email Id', field: 'userEmail' },
+            { headerName: 'Password', field: 'userPassword' },
+            { headerName: 'Age', field: 'age',  cellStyle: params => {
+                if (params.value > 20) {
                     return { backgroundColor: 'green' };
                 }
                 return { backgroundColor: 'orange' };
+            }},
+            { headerName: 'Skills', field: 'skillsNeeded' },
+        ];
+        this.getRowNodeId = (params: any) => {
+            return params.id;
+        };
+        
+
+    }
+
+    ngOnInit() { }
+
+    addUser() {
+        this.actionSelected = "add";
+        this.selectedRow = undefined;
+        $('#exampleModal').modal('show');
+    }
+
+    editUser() {
+        if (this.gridApi.getSelectedRows().length === 0) {
+            return alert("Please select user.")
+        }
+        this.actionSelected = "edit";
+        this.selectedRow = this.gridApi.getSelectedRows()[0];
+        $('#exampleModal').modal('show');
+    }
+
+    deleteUser() {
+        if (this.gridApi.getSelectedRows()[0] === undefined) {
+            return alert("Please select user.")
+        }
+        this.gridApi.applyTransaction({ remove: [this.gridApi.getSelectedRows()[0]] })
+        return alert("User deleted successfully.")
+    }
+
+    dynamicUser() {
+        this.gridApi.applyTransaction({ add: [''] })
+        alert("Dynamic row added please edit it inline")
+    }
+
+    registredFormData(event) {
+        this.formData = event['data'];
+        if (event['selected'] === 'edit') {
+            for (let i = 0; i < this.rowData.length; i++) {
+                if (i === this.rowIndex) {
+                    this.rowData.splice(this.rowIndex, 1, this.formData);
+                }
+            }
+            this.gridApi.setRowData(this.rowData);
+            this.gridApi.deselectAll();
+        } else {
+            this.gridApi.applyTransaction({ add: [this.formData] });
+            this.rowData.push(this.formData);
+        }
+    }
+
+    onGridReady(params) {
+        this.gridApi = params.api;
+        this.gridColumnApi = params.columnApi;
+        this.gridApi.sizeColumnsToFit();
+        // this.d.listenData().subscribe(res => {
+        //     if (res != undefined || res.length != 0) {
+        //         if (res['selected'] === "add") {
+        //             console.log('entered if')
+        //             this.gridApi.applyTransaction({ add: [res['data']] })
+        //         } else if (res['selected'] === 'edit') {
+        //             console.log("entered else if")
+        //             for(let i=0; i< this.rowData.length; i++) {
+        //                 if (i === this.rowIndex) {
+        //                     this.rowData.splice(this.rowIndex, 1, res['data']);
+        //                 }
+        //             }
+        //             this.gridApi.setRowData(this.rowData);
+        //         } else {
+        //             this.gridApi.applyTransaction({ remove: [this.gridApi.getSelectedRows()[0]] })
+        //         }
+        //     }
+
+        // })
+    }
+
+    onRowClick(event) {
+        this.rowIndex = event.rowIndex;
+    }
+
+    openAddModal() {
+        $('#exampleModal').modal('show');
+    }
+
+    onCellClicked(params) {
+        if (
+            params.event.target.dataset.action == 'toggle' &&
+            params.column.getColId() == 'action'
+        ) {
+            const cellRendererInstances = params.api.getCellRendererInstances({
+                rowNodes: [params.node],
+                columns: [params.column],
+            });
+            if (cellRendererInstances.length > 0) {
+                const instance = cellRendererInstances[0];
+                instance.togglePopup();
             }
         }
-    ];
+    }
 
-    defaultColDef: ColDef = {
-        filter: true, // Enable filtering on all columns
-        // editable: true, // Enable editing on all columns
-        sortable: true
-    };
+    // Column Definitions: Defines & controls grid columns.
+    // colDefs: ColDef[] = [
+    //     {
+    //         field: "mission",
+    //         width: 150,
+    //         // checkboxSelection: true,
+    //     },
+    //     {
+    //         field: "company",
+    //         width: 130,
+    //     },
+    //     {
+    //         field: "location",
+    //         width: 225,
+    //     },
+    //     {
+    //         field: "date",
+    //     },
+    //     {
+    //         field: "price",
+    //         width: 130,
+    //         cellStyle: params => {
+    //             if (params.value > 3630000) {
+    //                 return { backgroundColor: 'green' };
+    //             }
+    //             return { backgroundColor: 'orange' };
+    //         }
+    //     },
+    //     {
+    //         field: "Actions",
+    //         cellStyle: { overflow: 'visible' },
+    //         // editable: true,
+    //         colId: 'action',
+    //         cellRenderer: ActionButtonsComponent,
+    //         maxWidth: 150,
+    //         cellEditor: 'agRichSelectCellEditor',
+    //     }
+    // ];
 
-    rowData = [
-      {
-        "mission": "CRS SpX-25",
-        "company": "SpaceX",
-        "location": "LC-39A, Kennedy Space Center, Florida, USA",
-        "date": "2022-07-15",
-        "time": "0:44:00",
-        "rocket": "Falcon 9 Block 5",
-        "price": 12480000,
-      },
-      {
-        "mission": "LARES 2 & Cubesats",
-        "company": "ESA",
-        "location": "ELV-1, Guiana Space Centre, French Guiana, France",
-        "date": "2022-07-13",
-        "time": "13:13:00",
-        "rocket": "Vega C",
-        "price": 4470000,
-      },
-      {
-        "mission": "Wise One Looks Ahead (NROL-162)",
-        "company": "Rocket Lab",
-        "location": "Rocket Lab LC-1A, Māhia Peninsula, New Zealand",
-        "date": "2022-07-13",
-        "time": "6:30:00",
-        "rocket": "Electron/Curie",
-        "price": 9750000,
-      },
-      {
-        "mission": "TROPICS Flight 1",
-        "company": "Astra",
-        "location": "SLC-46, Cape Canaveral SFS, Florida, USA",
-        "date": "2022-07-12",
-        "time": "17:43:00",
-        "rocket": "Rocket 3",
-        "price": 3670000,
-      },
-      {
-        "mission": "Starlink Group 3-1",
-        "company": "SpaceX",
-        "location": "SLC-4E, Vandenberg SFB, California, USA",
-        "date": "2022-07-11",
-        "time": "1:39:00",
-        "rocket": "Falcon 9 Block 5",
-        "price": 11590000,
-      },
-      {
-        "mission": "Starlink Group 4-21",
-        "company": "SpaceX",
-        "location": "SLC-40, Cape Canaveral SFS, Florida, USA",
-        "date": "2022-07-07",
-        "time": "13:11:00",
-        "rocket": "Falcon 9 Block 5",
-        "price": 2330000,
-      },
-      {
-        "mission": "DS-EO, NeuSAR, SCOOB-I & POEM",
-        "company": "ISRO",
-        "location": "Second Launch Pad, Satish Dhawan Space Centre, India",
-        "date": "2022-06-30",
-        "time": "12:32:00",
-        "rocket": "PSLV-CA",
-        "price": 21050000,
-      },
-      {
-        "mission": "SES-22",
-        "company": "SpaceX",
-        "location": "SLC-40, Cape Canaveral SFS, Florida, USA",
-        "date": "2022-06-29",
-        "time": "21:04:00",
-        "rocket": "Falcon 9 Block 5",
-        "price": 16350000,
-      },
-      {
-        "mission": "CAPSTONE",
-        "company": "Rocket Lab",
-        "location": "Rocket Lab LC-1B, Māhia Peninsula, New Zealand",
-        "date": "2022-06-28",
-        "time": "9:55:00",
-        "rocket": "Electron/Photon",
-        "price": 3630000,
-      },
-      {
-        "mission": "IXPE",
-        "company": "SpaceX",
-        "location": "LC-39A, Kennedy Space Center, Florida, USA",
-        "date": "2021-12-09",
-        "time": "6:00:00",
-        "rocket": "Falcon 9 Block 5",
-        "price": 18290000,
-      },
-      {
-        "mission": "A Data With Destiny",
-        "company": "Rocket Lab",
-        "location": "Rocket Lab LC-1A, Māhia Peninsula, New Zealand",
-        "date": "2021-12-09",
-        "time": "0:02:00",
-        "rocket": "Electron/Curie",
-        "price": 9560000,
-      },
-      {
-        "mission": "Soyuz MS-20 / Space Adventures",
-        "company": "Roscosmos",
-        "location": "Site 31/6, Baikonur Cosmodrome, Kazakhstan",
-        "date": "2021-12-08",
-        "time": "7:38:00",
-        "rocket": "Soyuz 2.1a",
-        "price": 4900000,
-      },
-      {
-        "mission": "Galileo FOC FM23-FM24",
-        "company": "Arianespace",
-        "location": "ELS, Guiana Space Centre, French Guiana, France",
-        "date": "2021-12-05",
-        "time": "0:19:00",
-        "rocket": "Soyuz ST-B/Fregat-MT",
-        "price": 17810000,
-      },
-      {
-        "mission": "Starlink Group 4-3 & BlackSky",
-        "company": "SpaceX",
-        "location": "SLC-40, Cape Canaveral SFS, Florida, USA",
-        "date": "2021-12-02",
-        "time": "23:12:00",
-        "rocket": "Falcon 9 Block 5",
-        "price": 2760000,
-      },
-      {
-        "mission": "Progress M-UM Prichal",
-        "company": "Roscosmos",
-        "location": "Site 31/6, Baikonur Cosmodrome, Kazakhstan",
-        "date": "2021-11-24",
-        "time": "13:06:00",
-        "rocket": "Soyuz 2.1b",
-        "price": 3430000,
-      },
-      {
-        "mission": "DART",
-        "company": "SpaceX",
-        "location": "SLC-4E, Vandenberg SFB, California, USA",
-        "date": "2021-11-24",
-        "time": "6:21:00",
-        "rocket": "Falcon 9 Block 5",
-        "price": 5890000,
-      },
-      {
-        "mission": "STP-27AD2",
-        "company": "Astra",
-        "location": "LP-3B, Pacific Spaceport Complex, Kodiak, Alaska, USA",
-        "date": "2021-11-20",
-        "time": "6:16:00",
-        "rocket": "Rocket 3",
-        "price": 8540000,
-      },
-      {
-        "mission": "Love At First Insight",
-        "company": "Rocket Lab",
-        "location": "Rocket Lab LC-1A, Māhia Peninsula, New Zealand",
-        "date": "2021-11-18",
-        "time": "1:38:00",
-        "rocket": "Electron/Curie",
-        "price": 10550000,
-      },
-      {
-        "mission": "CERES 1, 2 & 3",
-        "company": "Arianespace",
-        "location": "ELV-1, Guiana Space Centre, French Guiana, France",
-        "date": "2021-11-16",
-        "time": "9:27:00",
-        "rocket": "Vega",
-        "price": 1480000,
-      },
-      {
-        "mission": "Starlink Group 4-1",
-        "company": "SpaceX",
-        "location": "SLC-40, Cape Canaveral SFS, Florida, USA",
-        "date": "2021-11-13",
-        "time": "12:19:00",
-        "rocket": "Falcon 9 Block 5",
-        "price": 1790000,
-      },
-      {
-        "mission": "SpaceX Crew-3",
-        "company": "SpaceX",
-        "location": "LC-39A, Kennedy Space Center, Florida, USA",
-        "date": "2021-11-11",
-        "time": "2:03:00",
-        "rocket": "Falcon 9 Block 5",
-        "price": 7360000,
-      },
-      {
-        "mission": "Progress MS-18",
-        "company": "Roscosmos",
-        "location": "Site 31/6, Baikonur Cosmodrome, Kazakhstan",
-        "date": "2021-10-28",
-        "time": "0:00:00",
-        "rocket": "Soyuz 2.1a",
-        "price": 18170000,
-      },
-      {
-        "mission": "SES-17 & Syracuse-4A",
-        "company": "Arianespace",
-        "location": "ELA-3, Guiana Space Centre, French Guiana, France",
-        "date": "2021-10-24",
-        "time": "2:10:00",
-        "rocket": "Ariane 5 ECA",
-        "price": 15460000,
-      },
-      {
-        "mission": "Soyuz MS-19",
-        "company": "Roscosmos",
-        "location": "Site 31/6, Baikonur Cosmodrome, Kazakhstan",
-        "date": "2021-10-05",
-        "time": "8:55:00",
-        "rocket": "Soyuz 2.1a",
-        "price": 22510000,
-      },
-      {
-        "mission": "Inspiration4",
-        "company": "SpaceX",
-        "location": "LC-39A, Kennedy Space Center, Florida, USA",
-        "date": "2021-09-16",
-        "time": "0:02:00",
-        "rocket": "Falcon 9 Block 5",
-        "price": 20220000,
-      },
-      {
-        "mission": "CRS SpX-25",
-        "company": "SpaceX",
-        "location": "LC-39A, Kennedy Space Center, Florida, USA",
-        "date": "2022-07-15",
-        "time": "0:44:00",
-        "rocket": "Falcon 9 Block 5",
-        "price": 12480000,
-      },
-      {
-        "mission": "LARES 2 & Cubesats",
-        "company": "ESA",
-        "location": "ELV-1, Guiana Space Centre, French Guiana, France",
-        "date": "2022-07-13",
-        "time": "13:13:00",
-        "rocket": "Vega C",
-        "price": 4470000,
-      },
-      {
-        "mission": "Wise One Looks Ahead (NROL-162)",
-        "company": "Rocket Lab",
-        "location": "Rocket Lab LC-1A, Māhia Peninsula, New Zealand",
-        "date": "2022-07-13",
-        "time": "6:30:00",
-        "rocket": "Electron/Curie",
-        "price": 9750000,
-      },
-      {
-        "mission": "TROPICS Flight 1",
-        "company": "Astra",
-        "location": "SLC-46, Cape Canaveral SFS, Florida, USA",
-        "date": "2022-07-12",
-        "time": "17:43:00",
-        "rocket": "Rocket 3",
-        "price": 3670000,
-      },
-      {
-        "mission": "Starlink Group 3-1",
-        "company": "SpaceX",
-        "location": "SLC-4E, Vandenberg SFB, California, USA",
-        "date": "2022-07-11",
-        "time": "1:39:00",
-        "rocket": "Falcon 9 Block 5",
-        "price": 11590000,
-      },
-      {
-        "mission": "Starlink Group 4-21",
-        "company": "SpaceX",
-        "location": "SLC-40, Cape Canaveral SFS, Florida, USA",
-        "date": "2022-07-07",
-        "time": "13:11:00",
-        "rocket": "Falcon 9 Block 5",
-        "price": 2330000,
-      },
-      {
-        "mission": "DS-EO, NeuSAR, SCOOB-I & POEM",
-        "company": "ISRO",
-        "location": "Second Launch Pad, Satish Dhawan Space Centre, India",
-        "date": "2022-06-30",
-        "time": "12:32:00",
-        "rocket": "PSLV-CA",
-        "price": 21050000,
-      },
-      {
-        "mission": "SES-22",
-        "company": "SpaceX",
-        "location": "SLC-40, Cape Canaveral SFS, Florida, USA",
-        "date": "2022-06-29",
-        "time": "21:04:00",
-        "rocket": "Falcon 9 Block 5",
-        "price": 16350000,
-      },
-      {
-        "mission": "CAPSTONE",
-        "company": "Rocket Lab",
-        "location": "Rocket Lab LC-1B, Māhia Peninsula, New Zealand",
-        "date": "2022-06-28",
-        "time": "9:55:00",
-        "rocket": "Electron/Photon",
-        "price": 3630000,
-      },
-      {
-        "mission": "IXPE",
-        "company": "SpaceX",
-        "location": "LC-39A, Kennedy Space Center, Florida, USA",
-        "date": "2021-12-09",
-        "time": "6:00:00",
-        "rocket": "Falcon 9 Block 5",
-        "price": 18290000,
-      },
-      {
-        "mission": "A Data With Destiny",
-        "company": "Rocket Lab",
-        "location": "Rocket Lab LC-1A, Māhia Peninsula, New Zealand",
-        "date": "2021-12-09",
-        "time": "0:02:00",
-        "rocket": "Electron/Curie",
-        "price": 9560000,
-      },
-      {
-        "mission": "Soyuz MS-20 / Space Adventures",
-        "company": "Roscosmos",
-        "location": "Site 31/6, Baikonur Cosmodrome, Kazakhstan",
-        "date": "2021-12-08",
-        "time": "7:38:00",
-        "rocket": "Soyuz 2.1a",
-        "price": 4900000,
-      },
-      {
-        "mission": "Galileo FOC FM23-FM24",
-        "company": "Arianespace",
-        "location": "ELS, Guiana Space Centre, French Guiana, France",
-        "date": "2021-12-05",
-        "time": "0:19:00",
-        "rocket": "Soyuz ST-B/Fregat-MT",
-        "price": 17810000,
-      },
-      {
-        "mission": "Starlink Group 4-3 & BlackSky",
-        "company": "SpaceX",
-        "location": "SLC-40, Cape Canaveral SFS, Florida, USA",
-        "date": "2021-12-02",
-        "time": "23:12:00",
-        "rocket": "Falcon 9 Block 5",
-        "price": 2760000,
-      },
-      {
-        "mission": "Progress M-UM Prichal",
-        "company": "Roscosmos",
-        "location": "Site 31/6, Baikonur Cosmodrome, Kazakhstan",
-        "date": "2021-11-24",
-        "time": "13:06:00",
-        "rocket": "Soyuz 2.1b",
-        "price": 3430000,
-      },
-      {
-        "mission": "DART",
-        "company": "SpaceX",
-        "location": "SLC-4E, Vandenberg SFB, California, USA",
-        "date": "2021-11-24",
-        "time": "6:21:00",
-        "rocket": "Falcon 9 Block 5",
-        "price": 5890000,
-      },
-      {
-        "mission": "STP-27AD2",
-        "company": "Astra",
-        "location": "LP-3B, Pacific Spaceport Complex, Kodiak, Alaska, USA",
-        "date": "2021-11-20",
-        "time": "6:16:00",
-        "rocket": "Rocket 3",
-        "price": 8540000,
-      },
-      {
-        "mission": "Love At First Insight",
-        "company": "Rocket Lab",
-        "location": "Rocket Lab LC-1A, Māhia Peninsula, New Zealand",
-        "date": "2021-11-18",
-        "time": "1:38:00",
-        "rocket": "Electron/Curie",
-        "price": 10550000,
-      },
-      {
-        "mission": "CERES 1, 2 & 3",
-        "company": "Arianespace",
-        "location": "ELV-1, Guiana Space Centre, French Guiana, France",
-        "date": "2021-11-16",
-        "time": "9:27:00",
-        "rocket": "Vega",
-        "price": 1480000,
-      },
-      {
-        "mission": "Starlink Group 4-1",
-        "company": "SpaceX",
-        "location": "SLC-40, Cape Canaveral SFS, Florida, USA",
-        "date": "2021-11-13",
-        "time": "12:19:00",
-        "rocket": "Falcon 9 Block 5",
-        "price": 1790000,
-      },
-      {
-        "mission": "SpaceX Crew-3",
-        "company": "SpaceX",
-        "location": "LC-39A, Kennedy Space Center, Florida, USA",
-        "date": "2021-11-11",
-        "time": "2:03:00",
-        "rocket": "Falcon 9 Block 5",
-        "price": 7360000,
-      },
-      {
-        "mission": "Progress MS-18",
-        "company": "Roscosmos",
-        "location": "Site 31/6, Baikonur Cosmodrome, Kazakhstan",
-        "date": "2021-10-28",
-        "time": "0:00:00",
-        "rocket": "Soyuz 2.1a",
-        "price": 18170000,
-      },
-      {
-        "mission": "SES-17 & Syracuse-4A",
-        "company": "Arianespace",
-        "location": "ELA-3, Guiana Space Centre, French Guiana, France",
-        "date": "2021-10-24",
-        "time": "2:10:00",
-        "rocket": "Ariane 5 ECA",
-        "price": 15460000,
-      },
-      {
-        "mission": "Soyuz MS-19",
-        "company": "Roscosmos",
-        "location": "Site 31/6, Baikonur Cosmodrome, Kazakhstan",
-        "date": "2021-10-05",
-        "time": "8:55:00",
-        "rocket": "Soyuz 2.1a",
-        "price": 22510000,
-      },
-      {
-        "mission": "Inspiration4",
-        "company": "SpaceX",
-        "location": "LC-39A, Kennedy Space Center, Florida, USA",
-        "date": "2021-09-16",
-        "time": "0:02:00",
-        "rocket": "Falcon 9 Block 5",
-        "price": 20220000,
-      },
-    ];
+    // rowData = [
+    //     {
+    //         "mission": "CRS SpX-25",
+    //         "company": "SpaceX",
+    //         "location": "LC-39A, Kennedy Space Center, Florida, USA",
+    //         "date": "2022-07-15",
+    //         "time": "0:44:00",
+    //         "rocket": "Falcon 9 Block 5",
+    //         "price": 12480000,
+    //     },
+    //     {
+    //         "mission": "LARES 2 & Cubesats",
+    //         "company": "ESA",
+    //         "location": "ELV-1, Guiana Space Centre, French Guiana, France",
+    //         "date": "2022-07-13",
+    //         "time": "13:13:00",
+    //         "rocket": "Vega C",
+    //         "price": 4470000,
+    //     },
+    //     {
+    //         "mission": "Wise One Looks Ahead (NROL-162)",
+    //         "company": "Rocket Lab",
+    //         "location": "Rocket Lab LC-1A, Māhia Peninsula, New Zealand",
+    //         "date": "2022-07-13",
+    //         "time": "6:30:00",
+    //         "rocket": "Electron/Curie",
+    //         "price": 9750000,
+    //     },
+    //     {
+    //         "mission": "TROPICS Flight 1",
+    //         "company": "Astra",
+    //         "location": "SLC-46, Cape Canaveral SFS, Florida, USA",
+    //         "date": "2022-07-12",
+    //         "time": "17:43:00",
+    //         "rocket": "Rocket 3",
+    //         "price": 3670000,
+    //     },
+    //     {
+    //         "mission": "Starlink Group 3-1",
+    //         "company": "SpaceX",
+    //         "location": "SLC-4E, Vandenberg SFB, California, USA",
+    //         "date": "2022-07-11",
+    //         "time": "1:39:00",
+    //         "rocket": "Falcon 9 Block 5",
+    //         "price": 11590000,
+    //     },
+    //     {
+    //         "mission": "Starlink Group 4-21",
+    //         "company": "SpaceX",
+    //         "location": "SLC-40, Cape Canaveral SFS, Florida, USA",
+    //         "date": "2022-07-07",
+    //         "time": "13:11:00",
+    //         "rocket": "Falcon 9 Block 5",
+    //         "price": 2330000,
+    //     },
+    //     {
+    //         "mission": "DS-EO, NeuSAR, SCOOB-I & POEM",
+    //         "company": "ISRO",
+    //         "location": "Second Launch Pad, Satish Dhawan Space Centre, India",
+    //         "date": "2022-06-30",
+    //         "time": "12:32:00",
+    //         "rocket": "PSLV-CA",
+    //         "price": 21050000,
+    //     },
+    //     {
+    //         "mission": "SES-22",
+    //         "company": "SpaceX",
+    //         "location": "SLC-40, Cape Canaveral SFS, Florida, USA",
+    //         "date": "2022-06-29",
+    //         "time": "21:04:00",
+    //         "rocket": "Falcon 9 Block 5",
+    //         "price": 16350000,
+    //     },
+    //     {
+    //         "mission": "CAPSTONE",
+    //         "company": "Rocket Lab",
+    //         "location": "Rocket Lab LC-1B, Māhia Peninsula, New Zealand",
+    //         "date": "2022-06-28",
+    //         "time": "9:55:00",
+    //         "rocket": "Electron/Photon",
+    //         "price": 3630000,
+    //     },
+    //     {
+    //         "mission": "IXPE",
+    //         "company": "SpaceX",
+    //         "location": "LC-39A, Kennedy Space Center, Florida, USA",
+    //         "date": "2021-12-09",
+    //         "time": "6:00:00",
+    //         "rocket": "Falcon 9 Block 5",
+    //         "price": 18290000,
+    //     },
+    //     {
+    //         "mission": "A Data With Destiny",
+    //         "company": "Rocket Lab",
+    //         "location": "Rocket Lab LC-1A, Māhia Peninsula, New Zealand",
+    //         "date": "2021-12-09",
+    //         "time": "0:02:00",
+    //         "rocket": "Electron/Curie",
+    //         "price": 9560000,
+    //     },
+    //     {
+    //         "mission": "Soyuz MS-20 / Space Adventures",
+    //         "company": "Roscosmos",
+    //         "location": "Site 31/6, Baikonur Cosmodrome, Kazakhstan",
+    //         "date": "2021-12-08",
+    //         "time": "7:38:00",
+    //         "rocket": "Soyuz 2.1a",
+    //         "price": 4900000,
+    //     },
+    //     {
+    //         "mission": "Galileo FOC FM23-FM24",
+    //         "company": "Arianespace",
+    //         "location": "ELS, Guiana Space Centre, French Guiana, France",
+    //         "date": "2021-12-05",
+    //         "time": "0:19:00",
+    //         "rocket": "Soyuz ST-B/Fregat-MT",
+    //         "price": 17810000,
+    //     },
+    //     {
+    //         "mission": "Starlink Group 4-3 & BlackSky",
+    //         "company": "SpaceX",
+    //         "location": "SLC-40, Cape Canaveral SFS, Florida, USA",
+    //         "date": "2021-12-02",
+    //         "time": "23:12:00",
+    //         "rocket": "Falcon 9 Block 5",
+    //         "price": 2760000,
+    //     },
+    //     {
+    //         "mission": "Progress M-UM Prichal",
+    //         "company": "Roscosmos",
+    //         "location": "Site 31/6, Baikonur Cosmodrome, Kazakhstan",
+    //         "date": "2021-11-24",
+    //         "time": "13:06:00",
+    //         "rocket": "Soyuz 2.1b",
+    //         "price": 3430000,
+    //     },
+    //     {
+    //         "mission": "DART",
+    //         "company": "SpaceX",
+    //         "location": "SLC-4E, Vandenberg SFB, California, USA",
+    //         "date": "2021-11-24",
+    //         "time": "6:21:00",
+    //         "rocket": "Falcon 9 Block 5",
+    //         "price": 5890000,
+    //     },
+    //     {
+    //         "mission": "STP-27AD2",
+    //         "company": "Astra",
+    //         "location": "LP-3B, Pacific Spaceport Complex, Kodiak, Alaska, USA",
+    //         "date": "2021-11-20",
+    //         "time": "6:16:00",
+    //         "rocket": "Rocket 3",
+    //         "price": 8540000,
+    //     },
+    //     {
+    //         "mission": "Love At First Insight",
+    //         "company": "Rocket Lab",
+    //         "location": "Rocket Lab LC-1A, Māhia Peninsula, New Zealand",
+    //         "date": "2021-11-18",
+    //         "time": "1:38:00",
+    //         "rocket": "Electron/Curie",
+    //         "price": 10550000,
+    //     },
+    //     {
+    //         "mission": "CERES 1, 2 & 3",
+    //         "company": "Arianespace",
+    //         "location": "ELV-1, Guiana Space Centre, French Guiana, France",
+    //         "date": "2021-11-16",
+    //         "time": "9:27:00",
+    //         "rocket": "Vega",
+    //         "price": 1480000,
+    //     },
+    //     {
+    //         "mission": "Starlink Group 4-1",
+    //         "company": "SpaceX",
+    //         "location": "SLC-40, Cape Canaveral SFS, Florida, USA",
+    //         "date": "2021-11-13",
+    //         "time": "12:19:00",
+    //         "rocket": "Falcon 9 Block 5",
+    //         "price": 1790000,
+    //     },
+    //     {
+    //         "mission": "SpaceX Crew-3",
+    //         "company": "SpaceX",
+    //         "location": "LC-39A, Kennedy Space Center, Florida, USA",
+    //         "date": "2021-11-11",
+    //         "time": "2:03:00",
+    //         "rocket": "Falcon 9 Block 5",
+    //         "price": 7360000,
+    //     },
+    //     {
+    //         "mission": "Progress MS-18",
+    //         "company": "Roscosmos",
+    //         "location": "Site 31/6, Baikonur Cosmodrome, Kazakhstan",
+    //         "date": "2021-10-28",
+    //         "time": "0:00:00",
+    //         "rocket": "Soyuz 2.1a",
+    //         "price": 18170000,
+    //     },
+    //     {
+    //         "mission": "SES-17 & Syracuse-4A",
+    //         "company": "Arianespace",
+    //         "location": "ELA-3, Guiana Space Centre, French Guiana, France",
+    //         "date": "2021-10-24",
+    //         "time": "2:10:00",
+    //         "rocket": "Ariane 5 ECA",
+    //         "price": 15460000,
+    //     },
+    //     {
+    //         "mission": "Soyuz MS-19",
+    //         "company": "Roscosmos",
+    //         "location": "Site 31/6, Baikonur Cosmodrome, Kazakhstan",
+    //         "date": "2021-10-05",
+    //         "time": "8:55:00",
+    //         "rocket": "Soyuz 2.1a",
+    //         "price": 22510000,
+    //     },
+    //     {
+    //         "mission": "Inspiration4",
+    //         "company": "SpaceX",
+    //         "location": "LC-39A, Kennedy Space Center, Florida, USA",
+    //         "date": "2021-09-16",
+    //         "time": "0:02:00",
+    //         "rocket": "Falcon 9 Block 5",
+    //         "price": 20220000,
+    //     },
+    //     {
+    //         "mission": "CRS SpX-25",
+    //         "company": "SpaceX",
+    //         "location": "LC-39A, Kennedy Space Center, Florida, USA",
+    //         "date": "2022-07-15",
+    //         "time": "0:44:00",
+    //         "rocket": "Falcon 9 Block 5",
+    //         "price": 12480000,
+    //     },
+    //     {
+    //         "mission": "LARES 2 & Cubesats",
+    //         "company": "ESA",
+    //         "location": "ELV-1, Guiana Space Centre, French Guiana, France",
+    //         "date": "2022-07-13",
+    //         "time": "13:13:00",
+    //         "rocket": "Vega C",
+    //         "price": 4470000,
+    //     },
+    //     {
+    //         "mission": "Wise One Looks Ahead (NROL-162)",
+    //         "company": "Rocket Lab",
+    //         "location": "Rocket Lab LC-1A, Māhia Peninsula, New Zealand",
+    //         "date": "2022-07-13",
+    //         "time": "6:30:00",
+    //         "rocket": "Electron/Curie",
+    //         "price": 9750000,
+    //     },
+    //     {
+    //         "mission": "TROPICS Flight 1",
+    //         "company": "Astra",
+    //         "location": "SLC-46, Cape Canaveral SFS, Florida, USA",
+    //         "date": "2022-07-12",
+    //         "time": "17:43:00",
+    //         "rocket": "Rocket 3",
+    //         "price": 3670000,
+    //     },
+    //     {
+    //         "mission": "Starlink Group 3-1",
+    //         "company": "SpaceX",
+    //         "location": "SLC-4E, Vandenberg SFB, California, USA",
+    //         "date": "2022-07-11",
+    //         "time": "1:39:00",
+    //         "rocket": "Falcon 9 Block 5",
+    //         "price": 11590000,
+    //     },
+    //     {
+    //         "mission": "Starlink Group 4-21",
+    //         "company": "SpaceX",
+    //         "location": "SLC-40, Cape Canaveral SFS, Florida, USA",
+    //         "date": "2022-07-07",
+    //         "time": "13:11:00",
+    //         "rocket": "Falcon 9 Block 5",
+    //         "price": 2330000,
+    //     },
+    //     {
+    //         "mission": "DS-EO, NeuSAR, SCOOB-I & POEM",
+    //         "company": "ISRO",
+    //         "location": "Second Launch Pad, Satish Dhawan Space Centre, India",
+    //         "date": "2022-06-30",
+    //         "time": "12:32:00",
+    //         "rocket": "PSLV-CA",
+    //         "price": 21050000,
+    //     },
+    //     {
+    //         "mission": "SES-22",
+    //         "company": "SpaceX",
+    //         "location": "SLC-40, Cape Canaveral SFS, Florida, USA",
+    //         "date": "2022-06-29",
+    //         "time": "21:04:00",
+    //         "rocket": "Falcon 9 Block 5",
+    //         "price": 16350000,
+    //     },
+    //     {
+    //         "mission": "CAPSTONE",
+    //         "company": "Rocket Lab",
+    //         "location": "Rocket Lab LC-1B, Māhia Peninsula, New Zealand",
+    //         "date": "2022-06-28",
+    //         "time": "9:55:00",
+    //         "rocket": "Electron/Photon",
+    //         "price": 3630000,
+    //     },
+    //     {
+    //         "mission": "IXPE",
+    //         "company": "SpaceX",
+    //         "location": "LC-39A, Kennedy Space Center, Florida, USA",
+    //         "date": "2021-12-09",
+    //         "time": "6:00:00",
+    //         "rocket": "Falcon 9 Block 5",
+    //         "price": 18290000,
+    //     },
+    //     {
+    //         "mission": "A Data With Destiny",
+    //         "company": "Rocket Lab",
+    //         "location": "Rocket Lab LC-1A, Māhia Peninsula, New Zealand",
+    //         "date": "2021-12-09",
+    //         "time": "0:02:00",
+    //         "rocket": "Electron/Curie",
+    //         "price": 9560000,
+    //     },
+    //     {
+    //         "mission": "Soyuz MS-20 / Space Adventures",
+    //         "company": "Roscosmos",
+    //         "location": "Site 31/6, Baikonur Cosmodrome, Kazakhstan",
+    //         "date": "2021-12-08",
+    //         "time": "7:38:00",
+    //         "rocket": "Soyuz 2.1a",
+    //         "price": 4900000,
+    //     },
+    //     {
+    //         "mission": "Galileo FOC FM23-FM24",
+    //         "company": "Arianespace",
+    //         "location": "ELS, Guiana Space Centre, French Guiana, France",
+    //         "date": "2021-12-05",
+    //         "time": "0:19:00",
+    //         "rocket": "Soyuz ST-B/Fregat-MT",
+    //         "price": 17810000,
+    //     },
+    //     {
+    //         "mission": "Starlink Group 4-3 & BlackSky",
+    //         "company": "SpaceX",
+    //         "location": "SLC-40, Cape Canaveral SFS, Florida, USA",
+    //         "date": "2021-12-02",
+    //         "time": "23:12:00",
+    //         "rocket": "Falcon 9 Block 5",
+    //         "price": 2760000,
+    //     },
+    //     {
+    //         "mission": "Progress M-UM Prichal",
+    //         "company": "Roscosmos",
+    //         "location": "Site 31/6, Baikonur Cosmodrome, Kazakhstan",
+    //         "date": "2021-11-24",
+    //         "time": "13:06:00",
+    //         "rocket": "Soyuz 2.1b",
+    //         "price": 3430000,
+    //     },
+    //     {
+    //         "mission": "DART",
+    //         "company": "SpaceX",
+    //         "location": "SLC-4E, Vandenberg SFB, California, USA",
+    //         "date": "2021-11-24",
+    //         "time": "6:21:00",
+    //         "rocket": "Falcon 9 Block 5",
+    //         "price": 5890000,
+    //     },
+    //     {
+    //         "mission": "STP-27AD2",
+    //         "company": "Astra",
+    //         "location": "LP-3B, Pacific Spaceport Complex, Kodiak, Alaska, USA",
+    //         "date": "2021-11-20",
+    //         "time": "6:16:00",
+    //         "rocket": "Rocket 3",
+    //         "price": 8540000,
+    //     },
+    //     {
+    //         "mission": "Love At First Insight",
+    //         "company": "Rocket Lab",
+    //         "location": "Rocket Lab LC-1A, Māhia Peninsula, New Zealand",
+    //         "date": "2021-11-18",
+    //         "time": "1:38:00",
+    //         "rocket": "Electron/Curie",
+    //         "price": 10550000,
+    //     },
+    //     {
+    //         "mission": "CERES 1, 2 & 3",
+    //         "company": "Arianespace",
+    //         "location": "ELV-1, Guiana Space Centre, French Guiana, France",
+    //         "date": "2021-11-16",
+    //         "time": "9:27:00",
+    //         "rocket": "Vega",
+    //         "price": 1480000,
+    //     },
+    //     {
+    //         "mission": "Starlink Group 4-1",
+    //         "company": "SpaceX",
+    //         "location": "SLC-40, Cape Canaveral SFS, Florida, USA",
+    //         "date": "2021-11-13",
+    //         "time": "12:19:00",
+    //         "rocket": "Falcon 9 Block 5",
+    //         "price": 1790000,
+    //     },
+    //     {
+    //         "mission": "SpaceX Crew-3",
+    //         "company": "SpaceX",
+    //         "location": "LC-39A, Kennedy Space Center, Florida, USA",
+    //         "date": "2021-11-11",
+    //         "time": "2:03:00",
+    //         "rocket": "Falcon 9 Block 5",
+    //         "price": 7360000,
+    //     },
+    //     {
+    //         "mission": "Progress MS-18",
+    //         "company": "Roscosmos",
+    //         "location": "Site 31/6, Baikonur Cosmodrome, Kazakhstan",
+    //         "date": "2021-10-28",
+    //         "time": "0:00:00",
+    //         "rocket": "Soyuz 2.1a",
+    //         "price": 18170000,
+    //     },
+    //     {
+    //         "mission": "SES-17 & Syracuse-4A",
+    //         "company": "Arianespace",
+    //         "location": "ELA-3, Guiana Space Centre, French Guiana, France",
+    //         "date": "2021-10-24",
+    //         "time": "2:10:00",
+    //         "rocket": "Ariane 5 ECA",
+    //         "price": 15460000,
+    //     },
+    //     {
+    //         "mission": "Soyuz MS-19",
+    //         "company": "Roscosmos",
+    //         "location": "Site 31/6, Baikonur Cosmodrome, Kazakhstan",
+    //         "date": "2021-10-05",
+    //         "time": "8:55:00",
+    //         "rocket": "Soyuz 2.1a",
+    //         "price": 22510000,
+    //     },
+    //     {
+    //         "mission": "Inspiration4",
+    //         "company": "SpaceX",
+    //         "location": "LC-39A, Kennedy Space Center, Florida, USA",
+    //         "date": "2021-09-16",
+    //         "time": "0:02:00",
+    //         "rocket": "Falcon 9 Block 5",
+    //         "price": 20220000,
+    //     },
+    // ];
+
+    // colDefs: ColDef[] = [
+    //     {
+    //         field: "firstName",
+    //         width: 150,
+    //         // checkboxSelection: true,
+    //     },
+    //     {
+    //         field: "lastName",
+    //         width: 130,
+    //     },
+    //     {
+    //         field: "userEmail",
+    //         width: 225,
+    //     },
+    //     {
+    //         field: "userPassword",
+    //     },
+    //     {
+    //         field: "skillsNeeded",
+    //         width: 130,
+    //         cellStyle: params => {
+    //             if (params.value > 3630000) {
+    //                 return { backgroundColor: 'green' };
+    //             }
+    //             return { backgroundColor: 'orange' };
+    //         }
+    //     },
+    //     {
+    //         field: "Actions",
+    //         cellStyle: { overflow: 'visible' },
+    //         editable: true,
+    //         colId: 'action',
+    //         // cellRenderer: ActionButtonsComponent,
+    //         cellRenderer: ActionButtonsComponent,
+    //         maxWidth: 150,
+    //         // cellEditor: 'agRichSelectCellEditor',
+    //     },
+    //     // {
+    //     //     field: "Actions",
+    //     //     cellStyle: { overflow: 'visible' },
+    //     //     editable: true,
+    //     //     colId: 'action',
+    //     //     // cellRenderer: ActionButtonsComponent,
+    //     //     cellRenderer: ActionButtonsComponent,
+    //     //     cellRendererParams: {
+    //     //         onClick: this.openAddModal.bind(this),
+    //     //         label: "Add",
+
+    //     //     },
+    //     //     maxWidth: 150,
+    //     //     // cellEditor: 'agRichSelectCellEditor',
+    //     // },
+    //     // {
+    //     //     field: "Actions",
+    //     //     cellStyle: { overflow: 'visible' },
+    //     //     editable: true,
+    //     //     colId: 'action',
+    //     //     // cellRenderer: ActionButtonsComponent,
+    //     //     cellRenderer: ActionButtonsComponent,
+    //     //     cellRendererParams: {
+    //     //         onClick: this.editUser.bind(this),
+    //     //         label: "Edit",
+    //     //     },
+    //     //     maxWidth: 150,
+    //     //     // cellEditor: 'agRichSelectCellEditor',
+    //     // },
+    //     // {
+    //     //     field: "Actions",
+    //     //     cellStyle: { overflow: 'visible' },
+    //     //     editable: true,
+    //     //     colId: 'action',
+    //     //     // cellRenderer: ActionButtonsComponent,
+    //     //     cellRenderer: ActionButtonsComponent,
+    //     //     cellRendererParams: {
+    //     //         onClick: this.removeUserData.bind(this),
+    //     //         label: "Delete"
+    //     //     },
+    //     //     maxWidth: 150,
+    //     //     // cellEditor: 'agRichSelectCellEditor',
+    //     // }
+    // ];
 
     // ------------------ FOR GROUPING DATA IN ROW -------------------------
 
@@ -1036,8 +1294,5 @@ export class AppComponent {
     //         field: 'bronze' 
     //     },
     // ]
-
-    // ----------------------------------------------------------------------
-
 
 }
